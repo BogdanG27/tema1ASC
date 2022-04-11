@@ -65,7 +65,7 @@ class Marketplace:
             # assign a list of products for every producer
             self.producers_products[producer_id] = []
             # log the registered producer
-            self.logger.info(f"Registered producer, id: {producer_id}")
+            self.logger.info("Registered producer, id: %s", producer_id)
             return producer_id
 
     def publish(self, producer_id, product):
@@ -84,7 +84,7 @@ class Marketplace:
         self.producers_products[producer_id].append(product)
         # log the added product
         self.logger.info(
-            f"Producer {producer_id} published {product.__str__()}")
+            "Producer %d published %s", producer_id, product.__str__())
 
         self.all_products[product] = producer_id
         return True
@@ -98,10 +98,13 @@ class Marketplace:
 
         # we also need a lock because we increment
         with self.cart_lock:
+            # assign the cart id
             cart_id = self.current_cart_id
             self.current_cart_id += 1
+            # assign a list for the cart
             self.consumers_carts[cart_id] = []
-            self.logger.info(f"Created new cart, id: {cart_id}")
+            # log the new added cart
+            self.logger.info("Created new cart, id: %d", cart_id)
             return cart_id
 
     def add_to_cart(self, cart_id, product):
@@ -116,16 +119,20 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
+        # search for the asked product
         for id_producer in range(0, self.current_producer_id):
+            # if found add it to the cart and remove it from the list
             if product in self.producers_products[id_producer]:
                 self.consumers_carts[cart_id].append(product)
                 self.producers_products[id_producer].remove(product)
+                # log the operations
                 self.logger.info(
-                    f"Added new product to the cart {cart_id}: {product.__str__()}")
+                    "Added new product to the cart %d: %s", cart_id, product.__str__())
                 self.logger.info(
-                    f"Removed product from producer {id_producer}: {product.__str__()}")
+                    "Removed product from producer %d: %s", id_producer, product.__str__())
 
                 return True
+        # if not found, return false
         return False
 
     def remove_from_cart(self, cart_id, product):
@@ -139,15 +146,18 @@ class Marketplace:
         :param product: the product to remove from cart
         """
 
+        # check for the product to be in the cart
+        # add it back to the producer list and remove it from the cart
         if product in self.consumers_carts[cart_id]:
             producer_id = self.all_products[product]
 
             self.producers_products[producer_id].append(product)
             self.consumers_carts[cart_id].remove(product)
+            # log the operations executed
             self.logger.info(
-                f"Removed product {product.__str__()} from cart {cart_id}")
+                "Removed product %s from cart %d", product.__str__(), cart_id)
             self.logger.info(
-                f"Added product {product.__str__()} back to producer {producer_id} stock")
+                "Added product %s back to producer %d stock", product.__str__(), producer_id)
 
     def place_order(self, cart_id):
         """
@@ -156,8 +166,9 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
+        # log the products ordered and return the list
         self.logger.info(
-            f"Order placed {self.consumers_carts[cart_id]} from cart {cart_id}")
+            "Order placed %s from cart %d", self.consumers_carts[cart_id].__str__(), cart_id)
         return self.consumers_carts[cart_id]
 
 
@@ -173,12 +184,18 @@ class TestMarketplace(unittest.TestCase):
         self.marketplace = Marketplace(10)
 
     def test_register_product(self):
+        """
+        Method to check register_product from Marketplace
+        """
         rang = range(200)
         for i in rang:
             self.assertEqual(
                 self.marketplace.register_producer(), i, "Not the expected id")
 
     def test_publish(self):
+        """
+        Method to check publish from Marketplace
+        """
         producer_id = self.marketplace.register_producer()
         prod1 = {
             "product_type": "Coffee",
@@ -203,12 +220,18 @@ class TestMarketplace(unittest.TestCase):
             "Not the expected products")
 
     def test_new_cart(self):
-        r = range(200)
-        for i in r:
+        """
+        Method to check new_cart from Marketplace
+        """
+        rang = range(200)
+        for i in rang:
             self.assertEqual(
                 self.marketplace.new_cart(), i, "Not the expected id")
 
     def test_add_to_cart(self):
+        """
+        Method to check add_to_cart from Marketplace
+        """
         cart_id = self.marketplace.new_cart()
         producer_id = self.marketplace.register_producer()
         prod1 = {
@@ -240,6 +263,9 @@ class TestMarketplace(unittest.TestCase):
                          prod2], "Not the expected cart content")
 
     def test_remove_from_cart(self):
+        """
+        Method to check remove_from_cart from Marketplace
+        """
         cart_id = self.marketplace.new_cart()
         producer_id = self.marketplace.register_producer()
         prod1 = {
@@ -272,6 +298,9 @@ class TestMarketplace(unittest.TestCase):
                          prod1], "Not the expected cart content")
 
     def test_place_order(self):
+        """
+        Method to check place_order from Marketplace
+        """
         cart_id = self.marketplace.new_cart()
         producer_id = self.marketplace.register_producer()
         prod1 = {
